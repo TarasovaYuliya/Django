@@ -14,6 +14,12 @@ from django.contrib.auth.forms import AuthenticationForm
 # По нему django будет определять,
 # выполнил ли вход пользователь.
 from django.contrib.auth import login
+# сообщения
+from .models import Message
+from datetime import datetime
+# для ответа на асинхронный запрос в формате JSON
+from django.http import JsonResponse
+import json
 
 # Для Log out с перенаправлением на главную
 from django.http import HttpResponseRedirect
@@ -73,12 +79,18 @@ def detail(request, riddle_id):
     error_message = None
     if "error_message" in request.GET:
         error_message = request.GET["error_message"]
+
     return render(
         request,
         "answer.html",
         {
-            "riddle": get_object_or_404(Riddle, pk=riddle_id),
-            "error_message": error_message
+            "riddle": get_object_or_404(
+                Riddle, pk=riddle_id),
+            "error_message": error_message,
+            "latest_messages":
+                Message.objects
+                    .filter(chat_id=riddle_id)
+                    .order_by('-pub_date')[:5]
         }
     )
 
@@ -159,3 +171,36 @@ class PasswordChangeView(FormView):
     def form_valid(self, form):
         form.save()
         return super(PasswordChangeView, self).form_valid(form)
+
+
+def post(request, riddle_id):
+    msg = Message()
+    msg.author = request.user
+    msg.chat = get_object_or_404(Riddle, pk=riddle_id)
+    msg.message = request.POST['message']
+    msg.pub_date = datetime.now()
+    msg.save()
+    return HttpResponseRedirect(app_url + str(riddle_id))
+
+
+def msg_list(request, riddle_id):
+    # выбираем список сообщений
+    res = list(
+        Message.objects
+            # фильтруем по id загадки
+            .filter(chat_id=riddle_id)
+            # отбираем 5 самых свежих
+            .order_by('-pub_date')[:5]
+            # выбираем необходимые поля
+            .values('author__username',
+                    'pub_date',
+                    'message'
+                    )
+    )
+    # конвертируем даты в строки - сами они не умеют
+    for r in res:
+        r['pub_date'] = \
+            r['pub_date'].strftime(
+                '%d.%m.%Y %H:%M:%S'
+            )
+    return JsonResponse(json.dumps(res), safe=False)
