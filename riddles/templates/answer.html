@@ -8,8 +8,9 @@
     {% endif %}
     <form action="answer/" method="post">
         {% csrf_token %}
-        {% for option in riddle.option_set.all %}
-            <input type="radio" name="option"
+        {% for option in option_set %}
+            <input type="radio"
+                   name="option"
                    id="option{{ forloop.counter }}"
                    value="{{ option.id }}"/>
             <label for="option{{ forloop.counter }}">
@@ -18,6 +19,7 @@
         {% endfor %}
         <input type="submit" value="Answer"/>
     </form>
+
     <hr>
     <h4>Rating</h4>
     <p>Average rating:
@@ -31,41 +33,28 @@
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-sm text-center">
-                        <input name="mark"
-                               type="radio"
-                               value="1"/> 1
+                        <input name="mark" type="radio" value="1"/> 1
                     </div>
                     <div class="col-sm text-center">
-                        <input name="mark"
-                               type="radio"
-                               value="2"/> 2
+                        <input name="mark" type="radio" value="2"/> 2
                     </div>
                     <div class="col-sm text-center">
-                        <input name="mark"
-                               type="radio"
-                               value="3"/> 3
+                        <input name="mark" type="radio" value="3"/> 3
                     </div>
                     <div class="col-sm text-center">
-                        <input name="mark"
-                               type="radio"
-                               value="4"/> 4
+                        <input name="mark" type="radio" value="4"/> 4
                     </div>
                     <div class="col-sm text-center">
-                        <input name="mark"
-                               type="radio"
-                               value="5"/> 5
+                        <input name="mark" type="radio" value="5"/> 5
                     </div>
                     <div class="col-sm text-center">
-                        <input class="btn btn-success"
-                               type="submit"
-                               value="Send mark"/>
+                        <input class="btn btn-success" type="submit" value="Send mark"/>
                     </div>
                 </div>
             </form>
         {% else %}
             Your rating: {{ user_rating }}
         {% endif %}
-
     {% endif %}
 
     <hr>
@@ -145,5 +134,6 @@
 
         setInterval(send_msg_update_request, 5000);
     </script>
+
 
 {% endblock %}
