@@ -9,13 +9,8 @@
     <form action="answer/" method="post">
         {% csrf_token %}
         {% for option in option_set %}
-            <input type="radio"
-                   name="option"
-                   id="option{{ forloop.counter }}"
-                   value="{{ option.id }}"/>
-            <label for="option{{ forloop.counter }}">
-                {{ option.text }}
-            </label><br>
+            <input type="radio" name="option" id="option{{ forloop.counter }}" value="{{ option.id }}"/>
+            <label for="option{{ forloop.counter }}"> {{ option.text }} </label><br>
         {% endfor %}
         <input type="submit" value="Answer"/>
     </form>

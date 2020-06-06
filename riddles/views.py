@@ -1,8 +1,9 @@
 import numpy
+from django.core.mail import send_mail
 
 from django.shortcuts import get_object_or_404, render, redirect
 
-from .models import Riddle, Option
+from .models import Riddle, Option, User
 
 # Базовый класс для обработки страниц с формами.
 from django.views.generic.edit import FormView
@@ -36,6 +37,9 @@ from django.db.models import Avg
 
 # Для смены пароля - форма
 from django.contrib.auth.forms import PasswordChangeForm
+
+from django import forms
+from django.utils.translation import gettext, gettext_lazy as _
 
 # базовый URL приложения, главной страницы -
 # часто нужен при указании путей переадресации
@@ -302,5 +306,73 @@ def post_riddle(request):
     # это ожидаемое исключение, при котором ничего делать не надо
     except:
         pass
+    # цикл по всем пользователям
+    for i in User.objects.all():
+        # проверка, что текущий пользователь подписан - указал e-mail
+        if i.email != '':
+            send_mail(
+                # тема письма
+                'New riddle',
+                # текст письма
+                'A new riddle was added on riddles portal:\n' +
+                'http://localhost:8000/riddles/' + str(rid.id) + '.',
+                # отправитель
+                'tarasovayuliya1.19@gmail.com',
+                # список получателей из одного получателя
+                [i.email],
+                # отключаем замалчивание ошибок,
+                # чтобы из видеть и исправлять
+                False
+            )
 
     return HttpResponseRedirect(app_url + str(rid.id))
+
+
+# класс, описывающий логику формы:
+# список заполняемых полей и их сохранение
+class SubscribeForm(forms.Form):
+    # поле для ввода e-mail
+    email = forms.EmailField(label=_("E-mail"), required=True, )
+
+    # конструктор для запоминания пользователя,
+    # которому задается e-mail
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    # сохранение e-mail
+    def save(self, commit=True):
+        self.user.email = self.cleaned_data["email"]
+        if commit:
+            self.user.save()
+        return self.user
+
+
+# класс, описывающий взаимодействие логики
+# со страницами веб-приложения
+class SubscribeView(FormView):
+    # используем класс с логикой
+    form_class = SubscribeForm
+    # используем собственный шаблон
+    template_name = 'subscribe.html'
+    # после подписки возвращаем на главную станицу
+    success_url = app_url
+
+    # передача пользователя для конструктора класса с логикой
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    # вызов логики сохранения введенных данных
+    def form_valid(self, form):
+        form.save()
+        return HttpResponseRedirect(self.success_url)
+
+
+# функция для удаления подписки (форма не нужна,
+# поэтому без классов, просто функция)
+def unsubscribe(request):
+    request.user.email = ''
+    request.user.save()
+    return HttpResponseRedirect(app_url)

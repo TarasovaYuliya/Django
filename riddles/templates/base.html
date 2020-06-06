@@ -21,6 +21,11 @@
                     {% if user.is_staff %}
                         | <a href="/riddles/admin">Admin panel</a>
                     {% endif %}
+                    {% if user.email == '' %}
+                        | <a href="/riddles/subscribe">Subscribe</a>
+                    {% else %}
+                        | <a href="/riddles/unsubscribe">Unsubscribe</a>
+                    {% endif %}
 
                 </p>
             {% else %}
